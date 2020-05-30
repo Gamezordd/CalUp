@@ -4,6 +4,7 @@ import * as Calendar from 'expo-calendar'
 import {Card} from 'react-native-elements';
 import {View, ScrollView, Text, Button} from "react-native";
 import Loading from "./LoadingComponent";
+import { Alert } from 'react-native';
 
 export default class CalendarManagement extends Component{
     constructor(props){
@@ -43,6 +44,18 @@ export default class CalendarManagement extends Component{
         this.fetchCalendars();
     }
 
+    deleteCalendar(id, name){
+        Alert.alert(
+            "Delete",
+            `This operation will permanently delete ${name}. Are you Sure?`,
+            [
+                {text: 'OK', onPress: () => console.log("deletd: ", id)/*Calendar.deleteCalendarAsync(id)*/},
+                {text: 'Cancel', style:"cancel"}
+            ],
+            {cancelable: true}
+        )
+    }
+
     RenderCard(calendars){
         return(
                 calendars.map((element) => {
@@ -55,10 +68,10 @@ export default class CalendarManagement extends Component{
                             <Text style={{marginTop:10}}>Source Name: {element.source.name}</Text>
                             <View style={{flexDirection: "row", alignItems:"center", justifyContent: "center",paddingTop:10}}>
                                 <View style={{paddingHorizontal:10}}>
-                                <Button title="Delete" color="red"/>
+                                    <Button title="Delete" color="red" onPress={() => this.deleteCalendar(element.id, element.title)}/>
                                 </View>
                                 <View style={{paddingHorizontal:10}}>
-                                <Button title="Backup"/>
+                                    <Button title="Backup"/>
                                 </View>
                             </View>
                         </View>
