@@ -1,37 +1,36 @@
 import React, {Component} from 'react'
 import * as Permissions from 'expo-permissions'
 import * as Calendar from 'expo-calendar'
+import * as FileSystem from 'expo-file-system';
 import {Card} from 'react-native-elements';
 import {View, ScrollView, Text, Button} from "react-native";
 import Loading from "./LoadingComponent";
 import { Alert } from 'react-native';
-
 export default class CalendarManagement extends Component{
-    constructor(props){
-        super(props);
-        this.state={
-            isLoading: true,
-            calendars: []
-        }
+    
+    state={
+        isLoading:true,
+        calendars: [],
+        loadingMessage:''
     }
+
     async obtainCalendarPermission(){
         let permission = await Permissions.getAsync(Permissions.CALENDAR)
         if(permission.status != 'granted'){
             permission = await Permissions.askAsync(Permissions.CALENDAR);
             if (permission.status !== 'granted'){
-                Alert.alert('Permission not granted for Notifications')
+                Alert.alert('Permission not granted for Calendar')
             }
         }
         return permission;
     }
 
     async fetchCalendars(){
-        console.log("inside fetch calendars");
-        
         this.setState({
-            isLoading: true
+            isLoading: true,
+            loadingMessage: 'Fetching Calendars'
         })
-        this.obtainCalendarPermission();
+        await this.obtainCalendarPermission();
         const result = await Calendar.getCalendarsAsync();
         this.setState({
             calendars: [...result],
@@ -56,10 +55,19 @@ export default class CalendarManagement extends Component{
         )
     }
 
+    async handleBackup(calendar:any){
+        this.setState({isLoading: true, loadingMessage: 'Backup in Progress'})
+        const currentDate = new Date()
+        const events = await Calendar.getEventsAsync([calendar.id], new Date(0), currentDate);
+        const directory = FileSystem.documentDirectory + 'CalBackups/Single/' + currentDate
+        console.log("directory: ", directory);
+        await FileSystem.makeDirectoryAsync(directory,{intermediates: true})
+        await FileSystem.writeAsStringAsync(`${directory}/${calendar.title}:${currentDate.getHours}.cup`, events.toString()).then(() => {console.log("done");this.setState({isLoading: false})});
+    }
+
     RenderCard(calendars){
         return(
-                calendars.map((element) => {
-                console.log("element is: ", element);
+            calendars.map((element) => {
                 return(
                     <Card key={element.id} title={`Calendar ID: ${element.id}`} titleStyle={{textAlign:"left"}}>
                         <View>
@@ -71,7 +79,7 @@ export default class CalendarManagement extends Component{
                                     <Button title="Delete" color="red" onPress={() => this.deleteCalendar(element.id, element.title)}/>
                                 </View>
                                 <View style={{paddingHorizontal:10}}>
-                                    <Button title="Backup"/>
+                                    <Button title="Backup" onPress={() => this.handleBackup(element)}/>
                                 </View>
                             </View>
                         </View>
@@ -82,18 +90,17 @@ export default class CalendarManagement extends Component{
     }
 
     render() {
-        console.log("renderng");
-        
-        if(this.state.isLoading){
-            console.log("Loading");
+        const {isLoading, loadingMessage} = this.state
+
+        if(isLoading){
             return(
-                <Loading/>
+                <Loading message={loadingMessage}/>
             )
         }
-        if(!this.state.isLoading){
+        else{
             return(
-                <ScrollView style={{marginTop:40, marginBottom:10}}>
-                    <Text style={{fontSize:20,paddingHorizontal:20}}>Calendars found on Device: </Text>
+                <ScrollView style={{marginBottom:10}}>
+                    <Text style={{fontSize:20,paddingHorizontal:20, paddingTop:10}}>Calendars found on Device: </Text>
                     {this.RenderCard(this.state.calendars)}
                 </ScrollView>
             );

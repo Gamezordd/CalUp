@@ -2,13 +2,19 @@ import React from 'react';
 import {Overlay} from 'react-native-elements'
 import {ActivityIndicator, View, StyleSheet,Text,} from 'react-native'
 
-export default class Loading extends React.Component{
+
+interface LoadingProps{
+    message: string
+}
+export default class Loading extends React.Component<LoadingProps>{
     render(){
-        console.log("Inside loading");
+        const { message } = this.props
         return(
-        <Overlay overlayStyle={styles.loadingview}>
-            <ActivityIndicator size={70} style={styles.loadindicator}/>
-            <Text style={styles.loadingText}>Fetching Calendars</Text>
+        <Overlay overlayStyle={styles.loadingview} isVisible={true}>
+            <View>
+                <ActivityIndicator size={70} style={styles.loadindicator}/>
+                <Text style={styles.loadingText}>{message}</Text>
+            </View>
         </Overlay>
     )}
 }
